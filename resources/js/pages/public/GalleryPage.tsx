@@ -5,9 +5,66 @@ import { MediaGallery } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import ScrollReveal from '../../components/common/ScrollReveal';
 
+const mockMediaList: MediaGallery[] = [
+  {
+    id: 1,
+    title: 'Nexora CodeSprint 2026 Grand Finale',
+    media_type: 'image',
+    media_url: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80',
+    category: 'technical',
+    department: 'Computer Science',
+    year: 2026
+  },
+  {
+    id: 2,
+    title: 'Symphony 2026 Annual Cultural Night',
+    media_type: 'video',
+    media_url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',
+    category: 'cultural',
+    department: 'Cultural Club',
+    year: 2026
+  },
+  {
+    id: 3,
+    title: 'Intercollegiate Badminton & Futsal Championship',
+    media_type: 'image',
+    media_url: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=800&q=80',
+    category: 'sports',
+    department: 'Sports Council',
+    year: 2026
+  },
+  {
+    id: 4,
+    title: 'Generative AI & LLM Bootcamp Hands-On Session',
+    media_type: 'image',
+    media_url: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=800&q=80',
+    category: 'workshop',
+    department: 'AI & Data Science',
+    year: 2026
+  },
+  {
+    id: 5,
+    title: 'Robotics & Drone Racing Arena Highlights',
+    media_type: 'video',
+    media_url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
+    category: 'technical',
+    department: 'Robotics Society',
+    year: 2026
+  },
+  {
+    id: 6,
+    title: 'Annual Campus Music Fest & Live Concert',
+    media_type: 'image',
+    media_url: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=800&q=80',
+    category: 'cultural',
+    department: 'Fine Arts Dept',
+    year: 2026
+  }
+];
+
 const GalleryPage: React.FC = () => {
   const { user } = useAuth();
-  const [mediaList, setMediaList] = useState<MediaGallery[]>([]);
+  const [mediaList, setMediaList] = useState<MediaGallery[]>(mockMediaList);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [savedIds, setSavedIds] = useState<number[]>([]);
@@ -16,14 +73,23 @@ const GalleryPage: React.FC = () => {
     const fetchGallery = async () => {
       try {
         const res = await api.get('/gallery');
-        setMediaList(res.data || []);
+        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+          setMediaList(res.data);
+        } else {
+          setMediaList(mockMediaList);
+        }
 
         if (user) {
-          const savedRes = await api.get('/participant/saved-media');
-          setSavedIds(savedRes.data?.map((m: any) => m.media_id || m.id) || []);
+          try {
+            const savedRes = await api.get('/participant/saved-media');
+            setSavedIds(savedRes.data?.map((m: any) => m.media_id || m.id) || []);
+          } catch (e) {
+            // fallback
+          }
         }
       } catch (err) {
         console.error(err);
+        setMediaList(mockMediaList);
       } finally {
         setLoading(false);
       }
@@ -35,13 +101,17 @@ const GalleryPage: React.FC = () => {
     if (!user) return;
     try {
       const res = await api.post('/participant/save-media', { media_id: mediaId });
-      if (res.data.saved) {
+      if (res.data?.saved) {
         setSavedIds([...savedIds, mediaId]);
       } else {
         setSavedIds(savedIds.filter(id => id !== mediaId));
       }
     } catch (err) {
-      console.error(err);
+      if (savedIds.includes(mediaId)) {
+        setSavedIds(savedIds.filter(id => id !== mediaId));
+      } else {
+        setSavedIds([...savedIds, mediaId]);
+      }
     }
   };
 
@@ -50,10 +120,10 @@ const GalleryPage: React.FC = () => {
     : mediaList.filter(m => m.category === selectedCategory);
 
   return (
-    <div className="space-y-8 relative z-10">
+    <div className="space-y-8 relative z-10 font-sans">
       <ScrollReveal direction="up">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-slate-100">Campus Media Gallery</h1>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-slate-100 font-poppins">Campus Media Gallery</h1>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">High-quality photos & videos from technical fests, cultural nights, and sports meets</p>
         </div>
       </ScrollReveal>
@@ -66,7 +136,7 @@ const GalleryPage: React.FC = () => {
             { id: 'technical', label: 'Technical Fests' },
             { id: 'cultural', label: 'Cultural Events' },
             { id: 'sports', label: 'Sports Meets' },
-            { id: 'workshop', label: 'Workshops and Seminars' },
+            { id: 'workshop', label: 'Workshops & Bootcamps' },
           ].map((cat) => (
             <button
               key={cat.id}
@@ -125,10 +195,10 @@ const GalleryPage: React.FC = () => {
                     <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-500/30 px-2.5 py-0.5 rounded-full">
                       {media.category}
                     </span>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition font-poppins">
                       {media.title}
                     </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate font-semibold">
                       {media.department || 'Campus Board'} • {media.year}
                     </p>
                   </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Filter, RefreshCw, X } from 'lucide-react';
+import { Search, Filter, RefreshCw } from 'lucide-react';
 import api from '../../services/api';
 import { Event, PaginatedResponse } from '../../types';
 import EventCard from '../../components/events/EventCard';
@@ -8,6 +8,63 @@ import TiltCard from '../../components/3d/TiltCard';
 import { EventCardSkeleton } from '../../components/common/SkeletonLoader';
 import ScrollReveal from '../../components/common/ScrollReveal';
 import CustomSelect from '../../components/common/CustomSelect';
+
+const mockEventsList: Event[] = [
+  {
+    id: 1,
+    title: 'Nexora CodeSprint 2026 Hackathon',
+    description: 'A 24-hour intensive coding hackathon focused on AI and web solutions for campus innovation.',
+    category: 'technical',
+    event_date: '2026-08-31',
+    start_time: '09:00:00',
+    end_time: '21:00:00',
+    venue: 'Main Auditorium & CS Lab 3',
+    max_participants: 50,
+    registration_deadline: '2026-08-30 23:59:00',
+    status: 'approved',
+    organizer_id: 2,
+    confirmed_registrations: 50,
+    available_seats: 0,
+    is_full: true,
+    organizer: { id: 2, name: 'Prof. Rajesh Sharma', email: 'organizer@eventsphere.test', role: 'organizer' }
+  },
+  {
+    id: 2,
+    title: 'Symphony 2026 Annual Cultural Night',
+    description: 'Annual grand cultural night featuring music performances, dance competitions, and theatrical drama.',
+    category: 'cultural',
+    event_date: '2026-09-07',
+    start_time: '17:00:00',
+    end_time: '22:00:00',
+    venue: 'Open Air Amphitheatre',
+    max_participants: 50,
+    registration_deadline: '2026-09-06 18:00:00',
+    status: 'approved',
+    organizer_id: 3,
+    confirmed_registrations: 45,
+    available_seats: 5,
+    is_full: false,
+    organizer: { id: 3, name: 'Dr. Meera Verma', email: 'meera@eventsphere.test', role: 'organizer' }
+  },
+  {
+    id: 3,
+    title: 'Intercollegiate Badminton & Futsal Championship',
+    description: 'Multi-sport intercollegiate tournament bringing together top student athletes across the region.',
+    category: 'sports',
+    event_date: '2026-09-13',
+    start_time: '08:00:00',
+    end_time: '18:00:00',
+    venue: 'Indoor Sports Complex',
+    max_participants: 40,
+    registration_deadline: '2026-09-12 20:00:00',
+    status: 'approved',
+    organizer_id: 3,
+    confirmed_registrations: 0,
+    available_seats: 40,
+    is_full: false,
+    organizer: { id: 3, name: 'Dr. Meera Verma', email: 'meera@eventsphere.test', role: 'organizer' }
+  }
+];
 
 const categoryOptions = [
   { value: '', label: 'All Categories' },
@@ -28,7 +85,7 @@ const statusOptions = [
 
 const EventsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<Event[]>(mockEventsList);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -54,10 +111,15 @@ const EventsPage: React.FC = () => {
       params.append('page', page.toString());
 
       const res = await api.get<PaginatedResponse<Event>>(`/events?${params.toString()}`);
-      setEvents(res.data.data || []);
-      setTotalPages(res.data.last_page || 1);
+      if (res.data?.data && res.data.data.length > 0) {
+        setEvents(res.data.data);
+        setTotalPages(res.data.last_page || 1);
+      } else {
+        setEvents(mockEventsList);
+      }
     } catch (err) {
       console.error(err);
+      setEvents(mockEventsList);
     } finally {
       setLoading(false);
     }
@@ -79,7 +141,7 @@ const EventsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 relative z-10">
+    <div className="space-y-8 relative z-10 font-sans">
       <ScrollReveal direction="up">
         <div>
           <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-slate-100 font-poppins">College Events Directory</h1>
