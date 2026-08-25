@@ -5,7 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import AppRoutes from './routes/AppRoutes';
 
-const rootElement = document.getElementById('root');
+const rootElement = document.getElementById('root') || document.getElementById('app');
 
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
