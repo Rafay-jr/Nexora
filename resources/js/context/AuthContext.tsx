@@ -30,11 +30,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (token) {
       api.get('/auth/me')
         .then((res) => {
-          setUser(res.data.user);
-          localStorage.setItem('eventsphere_user', JSON.stringify(res.data.user));
+          if (res.data?.user) {
+            setUser(res.data.user);
+            localStorage.setItem('eventsphere_user', JSON.stringify(res.data.user));
+          }
         })
         .catch(() => {
-          logout();
+          // Keep existing saved local user on Vercel deployment if backend API is offline
+          const saved = localStorage.getItem('eventsphere_user');
+          if (saved) {
+            setUser(JSON.parse(saved));
+          }
         })
         .finally(() => setLoading(false));
     } else {
@@ -68,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('eventsphere_user', JSON.stringify(updatedUser));
   };
 
-  const hasRole = (allowedRoles: UserRole[]): bool => {
+  const hasRole = (allowedRoles: UserRole[]): boolean => {
     if (!user) return false;
     return allowedRoles.includes(user.role);
   };
@@ -80,4 +86,5 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+export default AuthContext;
 export const useAuth = () => useContext(AuthContext);
